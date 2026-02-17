@@ -417,6 +417,10 @@
 
         function nextQuestion() {
             currentQuestionIndex++;
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             if (currentQuestionIndex < questions.length) {
                 renderQuestion();
                 updateUI();
