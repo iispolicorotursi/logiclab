@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="description" content="An accessible interactive logic quiz for students.">
+    <title>Logic Lab: IF Statements</title>
+    
+    <!-- PWA Manifest Link (Keep this if you have the manifest.json file) -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon.png">
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    
+    <!-- Internal CSS (Merged for reliability) -->
+    <style>
+        /* Base settings for maximum readability */
+        body { 
+            font-family: 'Lexend', sans-serif; 
+            line-height: 1.6;
+        }
+        code { 
+            font-family: 'JetBrains Mono', monospace; 
+        }
+        
+        /* Animation for smooth transitions */
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Focus styles for keyboard navigation accessibility */
+        button:focus-visible, textarea:focus-visible, summary:focus-visible {
+            outline: 4px solid #6366f1;
+            outline-offset: 2px;
+        }
+
+        /* Custom style for the details marker */
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- APP CONTAINER -->
+    <main class="w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden border-2 border-slate-200 relative">
+        
+        <!-- HEADER -->
+        <header class="bg-indigo-600 p-8 text-white">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                    Logic Lab
+                </h1>
+                <span id="score-display" class="bg-indigo-500 px-4 py-2 rounded-xl text-lg font-semibold shadow-sm">Score: 0</span>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-indigo-800 rounded-full h-4 mt-2 border border-indigo-400/30">
+                <div id="progress-bar" class="bg-emerald-400 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <p id="progress-text" class="text-indigo-100 text-sm mt-2 font-medium text-right">Question 1 of 5</p>
+        </header>
+
+        <!-- CONTENT AREA -->
+        <div id="quiz-container" class="p-6 sm:p-10">
+            
+            <!-- Question Section -->
+            <div id="question-area" class="fade-in">
+                <h2 id="question-text" class="text-2xl sm:text-3xl font-bold mb-6 text-slate-800 leading-tight">
+                    <!-- Question text goes here -->
+                </h2>
+                
+                <!-- Code Snippet Area -->
+                <div id="code-snippet-container" class="hidden mb-8 bg-slate-900 rounded-2xl p-6 shadow-md border-2 border-slate-700">
+                    <pre><code id="code-snippet" class="text-emerald-300 text-lg sm:text-xl leading-relaxed block whitespace-pre-wrap"></code></pre>
+                </div>
+
+                <!-- Answer Options -->
+                <div id="options-grid" class="grid gap-4 mb-8">
+                    <!-- Options injected here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Feedback Section -->
+            <div id="feedback-area" class="hidden rounded-2xl p-6 mb-6 border-2">
+                <div class="flex items-start gap-4">
+                    <span id="feedback-icon" class="text-4xl mt-1 select-none"></span>
+                    <div>
+                        <h3 id="feedback-title" class="font-bold text-2xl mb-2"></h3>
+                        <p id="feedback-message" class="text-lg leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Button -->
+            <div class="flex justify-end">
+                <button id="next-btn" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xl px-8 py-4 rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-3 transform active:scale-95" onclick="nextQuestion()">
+                    Next Question
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- END SCREEN -->
+        <div id="end-screen" class="hidden p-8 sm:p-10 text-center fade-in">
+            <h2 class="text-3xl font-bold mb-4 text-slate-800">All Done!</h2>
+            
+            <div class="bg-indigo-50 rounded-2xl p-6 mb-8 border-2 border-indigo-100 flex items-center justify-between">
+                <div class="text-left">
+                    <p class="text-sm uppercase tracking-widest text-indigo-500 font-bold mb-1">Final Score</p>
+                    <p id="final-message" class="text-lg font-medium text-slate-700">Great effort!</p>
+                </div>
+                <p id="final-score" class="text-5xl font-bold text-indigo-600">0/0</p>
+            </div>
+
+            <!-- Reflection Section -->
+            <div class="text-left mb-8">
+                <label for="reflection-text" class="block text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Reflection <span class="text-rose-500 text-sm ml-1">(Required)</span>
+                </label>
+                <p class="text-slate-600 mb-3 text-base">Write one sentence explaining a mistake you made or a new concept you clarified.</p>
+                <textarea 
+                    id="reflection-text" 
+                    class="w-full p-4 rounded-xl border-2 border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-lg" 
+                    rows="3" 
+                    placeholder="I learned that..."
+                    oninput="checkReflection()"></textarea>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button 
+                    id="download-btn" 
+                    onclick="downloadReport()" 
+                    disabled
+                    class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-lg px-6 py-3 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download Report
+                </button>
+
+                <button onclick="restartQuiz()" class="w-full sm:w-auto bg-white border-2 border-indigo-600 text-indigo-700 hover:bg-indigo-50 text-lg px-6 py-3 rounded-xl font-bold transition-colors">
+                    Play Again
+                </button>
+            </div>
+        </div>
+
+        <!-- GLOSSARY PANEL -->
+        <details class="group bg-indigo-50 border-t-2 border-slate-200">
+            <summary class="p-6 cursor-pointer flex justify-between items-center select-none text-indigo-900 hover:bg-indigo-100 transition-colors">
+                <span class="font-bold text-xl flex items-center gap-2">
+                    📚 Helper Words (Glossary)
+                </span>
+                <span class="transform group-open:rotate-180 transition-transform duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </span>
+            </summary>
+            <div class="p-6 pt-0 grid gap-4 sm:grid-cols-2 text-slate-700">
+                <div class="bg-white p-4 rounded-xl border border-indigo-100">
+                    <strong class="text-indigo-600 block mb-1 text-lg">Variable</strong>
+                    <span class="leading-snug">A container used to store information (like a box with a label).</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-indigo-100">
+                    <strong class="text-indigo-600 block mb-1 text-lg">IF Statement</strong>
+                    <span class="leading-snug">Code that makes a decision based on whether something is true.</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-indigo-100">
+                    <strong class="text-indigo-600 block mb-1 text-lg">ELSE</strong>
+                    <span class="leading-snug">The backup plan. It runs only if the "IF" part is false.</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-indigo-100">
+                    <strong class="text-indigo-600 block mb-1 text-lg">Condition</strong>
+                    <span class="leading-snug">The test we are checking (e.g., is score greater than 50?).</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-indigo-100">
+                    <strong class="text-indigo-600 block mb-1 text-lg">Boolean</strong>
+                    <span class="leading-snug">A value that can only be True or False.</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-indigo-100">
+                    <strong class="text-indigo-600 block mb-1 text-lg">String</strong>
+                    <span class="leading-snug">Text inside quotes, like "Hello World".</span>
+                </div>
+            </div>
+        </details>
+
+    </main>
+
+    <footer class="mt-8 text-slate-500 font-medium">
+        <p>Accessible Coding Practice v2.1</p>
+    </footer>
+
+    <!-- Internal Logic Script (Merged for reliability) -->
+    <script>
+        // --- SERVICE WORKER REGISTRATION (Optional for PWA) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // This will fail in preview but work if you have sw.js next to this file
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => console.log('Service Worker registration skipped (normal for preview)'));
+            });
+        }
+
+        // --- QUIZ DATA ---
+        const questions = [
+            {
+                question: "What does an 'IF' block do?",
+                code: null,
+                options: [
+                    "It repeats code",
+                    "It makes a decision",
+                    "It stops the app",
+                    "It deletes data"
+                ],
+                correct: 1,
+                feedback: "Think of it like a fork in the road. It decides which way to go."
+            },
+            {
+                question: "Look at the code. The score is 50. Do you pass?",
+                code: "let score = 50;\n\nif (score >= 60) {\n  print(\"You passed!\");\n}",
+                options: [
+                    "Yes, it prints 'You passed!'",
+                    "No, nothing happens",
+                    "The computer crashes",
+                    "It prints 'Error'"
+                ],
+                correct: 1,
+                feedback: "50 is smaller than 60. The code inside the { } only runs if the score is 60 or more."
+            },
+            {
+                question: "Which symbol checks if two things are EXACTLY the same?",
+                code: "if (password ___ \"secret\") {\n  unlock();\n}",
+                options: [
+                    "= (One equals)",
+                    "== (Two equals)",
+                    "=== (Three equals)",
+                    "==== (Four equals)"
+                ],
+                correct: 2,
+                feedback: "In this language, `===` means 'Strictly Equal'. A single `=` is just for setting values."
+            },
+            {
+                question: "The 'IF' part is FALSE (not true). What runs?",
+                code: "if (isSunny) {\n  wearHat();\n} else {\n  bringUmbrella();\n}",
+                options: [
+                    "The 'else' part",
+                    "The 'if' part",
+                    "Both parts",
+                    "Nothing runs"
+                ],
+                correct: 0,
+                feedback: "'Else' is the backup plan. It runs when the first part is NOT true."
+            },
+            {
+                question: "Read the logic. What gets printed?",
+                code: "let temp = 30;\n\nif (temp < 10) {\n  print(\"Cold\");\n} else {\n  print(\"Hot\");\n}",
+                options: [
+                    "Cold",
+                    "Hot",
+                    "Nothing",
+                    "Error"
+                ],
+                correct: 1,
+                feedback: "30 is NOT less than 10. So it skips 'Cold' and goes to the 'else' block to print 'Hot'."
+            }
+        ];
+
+        // --- STATE ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isAnswering = true; 
+
+        // --- DOM ELEMENTS ---
+        const quizContainer = document.getElementById('quiz-container');
+        const endScreen = document.getElementById('end-screen');
+        const questionText = document.getElementById('question-text');
+        const codeContainer = document.getElementById('code-snippet-container');
+        const codeSnippet = document.getElementById('code-snippet');
+        const optionsGrid = document.getElementById('options-grid');
+        const nextBtn = document.getElementById('next-btn');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackMsg = document.getElementById('feedback-message');
+        const feedbackIcon = document.getElementById('feedback-icon');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const scoreDisplay = document.getElementById('score-display');
+        const reflectionInput = document.getElementById('reflection-text');
+        const downloadBtn = document.getElementById('download-btn');
+
+        function initQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            renderQuestion();
+            updateUI();
+        }
+
+        function updateUI() {
+            const progress = ((currentQuestionIndex) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.innerText = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            scoreDisplay.innerText = `Score: ${score}`;
+        }
+
+        function renderQuestion() {
+            isAnswering = true;
+            const q = questions[currentQuestionIndex];
+            
+            feedbackArea.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            optionsGrid.innerHTML = ''; 
+            
+            questionText.innerText = q.question;
+
+            if (q.code) {
+                codeContainer.classList.remove('hidden');
+                codeSnippet.innerText = q.code;
+            } else {
+                codeContainer.classList.add('hidden');
+            }
+
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = `
+                    w-full text-left p-5 sm:p-6 rounded-2xl border-2 border-slate-300 
+                    bg-white
+                    hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md
+                    focus:outline-none focus:ring-4 focus:ring-indigo-300
+                    transition-all duration-200 
+                    text-xl font-medium text-slate-700
+                    flex items-center gap-4
+                `;
+                
+                const indicator = document.createElement('div');
+                indicator.className = "w-8 h-8 rounded-full border-2 border-slate-400 flex-shrink-0 flex items-center justify-center";
+                btn.appendChild(indicator);
+                
+                const textSpan = document.createElement('span');
+                textSpan.innerText = opt;
+                btn.appendChild(textSpan);
+
+                btn.onclick = () => handleAnswer(index, btn, indicator);
+                optionsGrid.appendChild(btn);
+            });
+            
+            const area = document.getElementById('question-area');
+            area.classList.remove('fade-in');
+            void area.offsetWidth;
+            area.classList.add('fade-in');
+        }
+
+        function handleAnswer(selectedIndex, selectedBtn, indicator) {
+            if (!isAnswering) return;
+            isAnswering = false;
+
+            const q = questions[currentQuestionIndex];
+            const isCorrect = selectedIndex === q.correct;
+
+            selectedBtn.classList.remove('border-slate-300', 'hover:border-indigo-500', 'hover:bg-indigo-50', 'bg-white');
+            
+            if (isCorrect) {
+                score++;
+                selectedBtn.classList.add('bg-emerald-100', 'border-emerald-600', 'text-emerald-900', 'shadow-md');
+                indicator.classList.remove('border-slate-400');
+                indicator.classList.add('bg-emerald-600', 'border-emerald-600');
+                indicator.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                
+                showFeedback(true, q.feedback);
+            } else {
+                selectedBtn.classList.add('bg-orange-100', 'border-orange-500', 'text-orange-900');
+                indicator.classList.remove('border-slate-400');
+                indicator.classList.add('bg-orange-500', 'border-orange-500');
+                indicator.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+
+                const buttons = optionsGrid.children;
+                const correctBtn = buttons[q.correct];
+                correctBtn.classList.add('bg-emerald-50', 'border-emerald-400', 'text-emerald-800');
+                correctBtn.querySelector('div').classList.add('bg-emerald-200', 'border-emerald-200');
+                
+                showFeedback(false, q.feedback);
+            }
+
+            Array.from(optionsGrid.children).forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('cursor-default');
+            });
+
+            updateUI();
+            nextBtn.classList.remove('hidden');
+            if(window.innerWidth < 640) {
+                feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function showFeedback(isCorrect, message) {
+            feedbackArea.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'bg-orange-50', 'text-orange-900', 'border-emerald-200', 'border-orange-200');
+            
+            if (isCorrect) {
+                feedbackArea.classList.add('bg-emerald-50', 'text-emerald-900', 'border-emerald-200');
+                feedbackTitle.innerText = "That is Correct!";
+                feedbackIcon.innerText = "🌟";
+            } else {
+                feedbackArea.classList.add('bg-orange-50', 'text-orange-900', 'border-orange-200');
+                feedbackTitle.innerText = "Learning Moment";
+                feedbackIcon.innerText = "💡";
+            }
+            
+            feedbackMsg.innerText = message;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                renderQuestion();
+                updateUI();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            quizContainer.classList.add('hidden');
+            document.querySelector('header').classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            
+            document.getElementById('final-score').innerText = `${score}/${questions.length}`;
+            
+            const msg = document.getElementById('final-message');
+            const percentage = (score / questions.length) * 100;
+            
+            if (percentage === 100) msg.innerText = "Incredible! You are a star! 🌟";
+            else if (percentage >= 60) msg.innerText = "Great job! You are learning fast. 🚀";
+            else msg.innerText = "Good practice! Keep going. 🌱";
+            
+            // Reset Reflection
+            reflectionInput.value = "";
+            checkReflection();
+        }
+
+        function checkReflection() {
+            if (reflectionInput.value.trim().length > 0) {
+                downloadBtn.disabled = false;
+            } else {
+                downloadBtn.disabled = true;
+            }
+        }
+
+        function downloadReport() {
+            const reflection = reflectionInput.value;
+            const date = new Date().toLocaleDateString();
+            
+            const content = `LOGIC LAB REPORT
+---------------------------
+Date: ${date}
+Final Score: ${score} out of ${questions.length}
+
+STUDENT REFLECTION:
+${reflection}
+---------------------------
+Great work! Keep practicing logic.`;
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `logic-lab-report-${Date.now()}.txt`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function restartQuiz() {
+            endScreen.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            document.querySelector('header').classList.remove('hidden');
+            initQuiz();
+        }
+
+        // Start the quiz
+        initQuiz();
+    </script>
+</body>
+</html>
